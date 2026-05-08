@@ -1,119 +1,37 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verificador de Búsqueda Exacta</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; }
-        .match-found { background-color: #fef08a; font-weight: bold; padding: 0 2px; border-radius: 2px; }
-    </style>
-</head>
-<body class="bg-slate-100 min-h-screen p-4 md:p-8">
-    <div class="max-w-4xl mx-auto space-y-6">
-        <!-- Header -->
-        <header class="bg-blue-600 p-6 rounded-2xl shadow-xl text-white">
-            <h1 class="text-2xl font-bold">Buscador de Información Precisa</h1>
-            <p class="opacity-80 text-sm">Simulador de precisión para extensión de Outlook</p>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Panel de Control -->
-            <div class="md:col-span-1 space-y-4">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Configuración</h2>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Término a buscar</label>
-                            <input type="text" id="searchTerm" placeholder="Ej: 10, REF-99, etc." 
-                                class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                        </div>
-
-                        <div class="flex items-center space-x-2">
-                            <input type="checkbox" id="caseSensitive" class="w-4 h-4 text-blue-600 rounded cursor-pointer">
-                            <label for="caseSensitive" class="text-sm text-slate-600 cursor-pointer">Distinguir mayúsculas</label>
-                        </div>
-
-                        <button onclick="ejecutarPrueba()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg active:scale-95">
-                            Escanear Texto
-                        </button>
-                    </div>
-                </div>
-
-                <div id="resultCard" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center animate-bounce-short">
-                    <p class="text-xs font-bold text-slate-400 uppercase">Coincidencias Exactas</p>
-                    <div id="matchCount" class="text-5xl font-black text-blue-600 my-2">0</div>
-                    <p id="statusLabel" class="text-xs font-medium text-slate-500"></p>
-                </div>
-            </div>
-
-            <!-- Área de Texto (Simula el contenido del correo) -->
-            <div class="md:col-span-2 space-y-4">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-full flex flex-col">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest">Contenido del Correo (Simulado)</h2>
-                        <button onclick="cargarEjemplo()" class="text-xs text-blue-600 hover:underline">Cargar ejemplo de prueba</button>
-                    </div>
-                    <textarea id="textInput" placeholder="Pega aquí el texto que quieres analizar..." 
-                        class="flex-grow w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-mono focus:outline-none min-h-[300px]"></textarea>
-                    
-                    <div id="previewArea" class="hidden mt-4 p-4 bg-blue-50 border border-blue-100 rounded-xl text-sm overflow-auto max-h-[200px]">
-                        <!-- Aquí se mostrará el texto resaltado -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function cargarEjemplo() {
-            const ejemplo = "Hola, mi código de empleado es 10. No confunda con el código 100 o el 105.\n\n" +
-                          "Envíe la factura REF-99 al departamento 99.\n" +
-                          "Los números de serie son: SN-55, SN-556, y 55.";
-            document.getElementById('textInput').value = ejemplo;
-        }
-
-        function ejecutarPrueba() {
-            const text = document.getElementById('textInput').value;
-            const query = document.getElementById('searchTerm').value.trim();
-            const caseSensitive = document.getElementById('caseSensitive').checked;
-            
-            if (!query || !text) {
-                alert("Por favor, ingresa texto y un término de búsqueda.");
-                return;
-            }
-
-            // --- LÓGICA DE PRECISIÓN 100% ---
-            // 1. Escapar caracteres especiales de regex para evitar errores (ej: buscar '.')
-            const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            
-            // 2. Usar \b (Word Boundaries)
-            // \b asegura que el término no esté rodeado de otros caracteres alfanuméricos.
-            // Esto es lo que hace que buscar "10" NO encuentre "100".
-            const flags = caseSensitive ? "g" : "gi";
-            const regex = new RegExp(`\\b${escapedQuery}\\b`, flags);
-            
-            const matches = text.match(regex);
-            const count = matches ? matches.length : 0;
-
-            // Actualizar Interfaz
-            const resultCard = document.getElementById('resultCard');
-            const matchCount = document.getElementById('matchCount');
-            const statusLabel = document.getElementById('statusLabel');
-            const previewArea = document.getElementById('previewArea');
-
-            resultCard.classList.remove('hidden');
-            matchCount.innerText = count;
-            matchCount.className = count > 0 ? "text-5xl font-black text-green-600 my-2" : "text-5xl font-black text-slate-300 my-2";
-            statusLabel.innerText = count > 0 ? "¡Dato exacto localizado!" : "No se encontró el dato exacto.";
-
-            // Resaltado visual en el área de vista previa
-            previewArea.classList.remove('hidden');
-            const highlightedText = text.replace(regex, (match) => `<span class="match-found">${match}</span>`);
-            previewArea.innerHTML = `<strong>Vista previa:</strong><br>${highlightedText.replace(/\n/g, '<br>')}`;
-        }
-    </script>
-</body>
-</html>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
+           xsi:type="MailApp">
+  <Id>6f23e45a-1b2c-4d3e-8f9f-1234567890ab</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Buscador Exacto Corp</ProviderName>
+  <DefaultLocale>es-ES</DefaultLocale>
+  <DisplayName DefaultValue="Buscador Exacto"/>
+  <Description DefaultValue="Herramienta de búsqueda precisa de códigos y términos exactos."/>
+  <IconUrl DefaultValue="https://cdn-icons-png.flaticon.com/512/270/270017.png"/>
+  <HighResolutionIconUrl DefaultValue="https://cdn-icons-png.flaticon.com/512/270/270017.png"/>
+  <SupportUrl DefaultValue="https://mradermk1-cloud.github.io/Buscador-Outlook-Mk1/"/>
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.1"/>
+    </Sets>
+  </Requirements>
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://mradermk1-cloud.github.io/Buscador-Outlook-Mk1/index.html"/>
+        <RequestedHeight>250</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+  <Permissions>ReadItem</Permissions>
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  </Rule>
+  <DisableEntityHighlighting>false</DisableEntityHighlighting>
+</OfficeApp>
